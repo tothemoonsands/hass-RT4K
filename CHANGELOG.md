@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.1.0
+
+- Added RFC2217 serial-over-IP support using PySerial URLs
+- Preserved support for local USB serial device paths
+- Updated setup validation, labels, documentation, and connection errors for network serial devices
+
 ## Version 1.0.0 (January 2026)
 
 ### Initial Release
