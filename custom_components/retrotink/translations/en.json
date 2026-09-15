@@ -3,19 +3,19 @@
     "step": {
       "user": {
         "title": "Add RetroTINK Device",
-        "description": "Add a RetroTINK-4K device. You can add multiple devices by running this setup again.",
+        "description": "Add a RetroTINK-4K connected by USB serial or RFC2217 serial over IP. You can add multiple devices by running this setup again.",
         "data": {
           "device_model": "Device Model",
-          "serial_port": "Serial Port (e.g., /dev/ttyUSB0)"
+          "serial_port": "Serial port or RFC2217 URL (e.g., /dev/ttyUSB0 or rfc2217://192.168.1.95:4000)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the serial port. Check the port path and permissions.",
+      "cannot_connect": "Failed to connect. Check the serial path or RFC2217 URL, permissions, and network availability.",
       "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "This serial port is already configured"
+      "already_configured": "This serial connection is already configured"
     }
   }
 }

@@ -4,15 +4,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import serial
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN, CONF_SERIAL_PORT, CONF_DEVICE_MODEL, DEVICE_MODELS
+from .connection import open_serial_connection
+from .const import CONF_DEVICE_MODEL, CONF_SERIAL_PORT, DEVICE_MODELS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,20 +26,12 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect."""
     
-    def test_serial():
+    def test_serial() -> bool:
         try:
-            # Configure serial port with proper settings
-            ser = serial.Serial(
-                data[CONF_SERIAL_PORT],
-                115200,
-                bytesize=serial.EIGHTBITS,
-                stopbits=serial.STOPBITS_ONE,
-                parity=serial.PARITY_NONE,
-                timeout=1
-            )
-            ser.close()
+            with open_serial_connection(data[CONF_SERIAL_PORT]):
+                pass
             return True
-        except serial.SerialException:
+        except (OSError, ValueError):
             return False
 
     # Test serial connection in executor since it's blocking

@@ -2,7 +2,7 @@
 
 ## What You've Got
 
-A complete custom Home Assistant integration for controlling your RetroTINK-4K Pro and CE devices via serial/USB.
+A complete custom Home Assistant integration for controlling your RetroTINK-4K Pro and CE devices via USB serial or RFC2217 serial over IP.
 
 ## File Structure
 
@@ -81,7 +81,7 @@ After installation, restart Home Assistant completely.
 3. Search for "RetroTINK Serial Remote"
 4. Configure first device:
    - Name: "RetroTINK 4K Pro"
-   - Serial Port: `/dev/ttyUSB0`
+   - Serial Port: `/dev/ttyUSB0`, or RFC2217 URL: `rfc2217://192.168.1.95:4000`
 5. Click Submit
 6. Repeat for second device:
    - Name: "RetroTINK 4K CE"
@@ -152,6 +152,7 @@ data:
 **Can't connect during setup:**
 - Verify serial port path: `ls -l /dev/ttyUSB*`
 - Check permissions: `sudo chmod 666 /dev/ttyUSB0`
+- For RFC2217, verify Home Assistant can reach the server and TCP port
 - Make sure RetroTINK is powered on and connected
 
 **Commands not working:**

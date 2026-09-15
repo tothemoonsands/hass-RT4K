@@ -2,17 +2,23 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable
-import subprocess
-
-import serial
+from collections.abc import Iterable
+from typing import Any
 
 from homeassistant.components.remote import RemoteEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, CONF_SERIAL_PORT, CONF_DEVICE_MODEL, COMMAND_MAP, POWER_ON_CMD, POWER_OFF_CMD
+from .connection import open_serial_connection
+from .const import (
+    COMMAND_MAP,
+    CONF_DEVICE_MODEL,
+    CONF_SERIAL_PORT,
+    DOMAIN,
+    POWER_OFF_CMD,
+    POWER_ON_CMD,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,22 +58,6 @@ class RetroTINKRemote(RemoteEntity):
         self._serial_port = serial_port
         self._attr_unique_id = f"{entry_id}_remote"
         self._attr_is_on = False  # Track power state based on commands sent
-        self._serial = None
-        
-    async def async_added_to_hass(self) -> None:
-        """Run when entity is added to hass - configure serial port."""
-        await super().async_added_to_hass()
-        # Configure the serial port with proper settings
-        await self.hass.async_add_executor_job(self._configure_serial_port)
-
-    def _configure_serial_port(self) -> None:
-        """Configure serial port using stty."""
-        try:
-            cmd = f"stty -F {self._serial_port} 115200 cs8 -cstopb -parenb"
-            subprocess.run(cmd, shell=True, check=True, capture_output=True)
-            _LOGGER.debug(f"Configured serial port {self._serial_port}")
-        except subprocess.CalledProcessError as err:
-            _LOGGER.warning(f"Could not configure serial port {self._serial_port}: {err}")
 
     @property
     def device_info(self):
@@ -87,34 +77,19 @@ class RetroTINKRemote(RemoteEntity):
             is_power_on: If True, command is 'pwr on' and sent without 'remote ' prefix
         """
         try:
-            # Open serial connection with proper settings
-            ser = serial.Serial(
-                self._serial_port,
-                115200,
-                bytesize=serial.EIGHTBITS,
-                stopbits=serial.STOPBITS_ONE,
-                parity=serial.PARITY_NONE,
-                timeout=1
-            )
-            
             # Format command - only 'pwr on' doesn't get 'remote' prefix
             if is_power_on:
                 cmd = f"{command}\n"
             else:
                 cmd = f"remote {command}\n"
                 
-            _LOGGER.debug(f"Sending command to {self._attr_name}: {cmd.strip()}")
-            ser.write(cmd.encode('ascii'))
-            
-            # Close connection
-            ser.close()
+            _LOGGER.debug("Sending command to %s: %s", self._attr_name, cmd.strip())
+            with open_serial_connection(self._serial_port) as ser:
+                ser.write(cmd.encode("ascii"))
             return True
             
-        except serial.SerialException as err:
-            _LOGGER.error(f"Error sending command to {self._attr_name}: {err}")
-            return False
-        except Exception as err:
-            _LOGGER.error(f"Unexpected error sending command to {self._attr_name}: {err}")
+        except (OSError, ValueError) as err:
+            _LOGGER.error("Error sending command to %s: %s", self._attr_name, err)
             return False
 
     async def async_turn_on(self, **kwargs: Any) -> None:

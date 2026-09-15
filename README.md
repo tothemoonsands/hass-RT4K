@@ -1,6 +1,6 @@
 # RetroTINK-4K Serial Remote Integration for Home Assistant
 
-A custom Home Assistant integration for controlling RetroTINK-4K devices (Pro and CE models) via serial over USB.
+A custom Home Assistant integration for controlling RetroTINK-4K devices (Pro and CE models) via USB serial or RFC2217 serial over IP.
 
 ## Features
 
@@ -11,6 +11,7 @@ A custom Home Assistant integration for controlling RetroTINK-4K devices (Pro an
 - UI-based configuration flow
 - Standard remote command mapping (up, down, left, right, enter, menu, etc.)
 - Direct RetroTINK-4K command support
+- Local USB serial and RFC2217 network connection support
 
 ## Installation
 
@@ -51,6 +52,25 @@ You should see devices like `/dev/ttyUSB0` and `/dev/ttyUSB1`.
    - Select the device model (RetroTINK-4K Pro or RetroTINK-4K CE)
    - Enter the serial port (e.g., `/dev/ttyUSB0`)
 5. Repeat for your second device if you have both Pro and CE
+
+### Serial over IP with RFC2217
+
+If the RetroTINK is connected to another computer running an RFC2217 server such as `ser2net`, enter its URL instead of a local device path:
+
+```text
+rfc2217://192.168.1.95:4000
+```
+
+For `ser2net` 4.x, a matching server configuration is:
+
+```yaml
+connection: &rt4k
+  accepter: telnet(rfc2217),tcp,4000
+  connector: serialdev,/dev/ttyUSB0,115200n81,local
+  timeout: 0
+```
+
+Replace the device path and IP address with those used by your server. RFC2217 is unencrypted, so expose the port only on a trusted network or protect it with appropriate network controls.
 
 ### Permissions
 
@@ -178,9 +198,10 @@ automation:
 ### Device Not Responding
 
 1. Check serial port permissions
-2. Verify the correct port is configured
+2. Verify the correct port or RFC2217 URL is configured
 3. Try disconnecting and reconnecting the USB cable
-4. Check Home Assistant logs for error messages
+4. For RFC2217, confirm Home Assistant can reach the server's TCP port
+5. Check Home Assistant logs for error messages
 
 ### Commands Not Working
 
@@ -202,8 +223,8 @@ logger:
 
 ## Technical Details
 
-- **Communication:** Serial over USB at 115200 baud (8N1: 8 data bits, no parity, 1 stop bit)
-- **Serial Configuration:** Automatically configured using `stty -F <port> 115200 cs8 -cstopb -parenb`
+- **Communication:** USB serial or RFC2217 serial over IP at 115200 baud (8N1: 8 data bits, no parity, 1 stop bit)
+- **Serial Configuration:** Configured through PySerial when each connection is opened
 - **Command Format:** `remote <command>\n` (all commands get this prefix)
 - **Power Commands:** 
   - Power On: `pwr on\n` (ONLY command without "remote" prefix)
